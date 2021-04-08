@@ -1,0 +1,55 @@
+---
+- name: setup back-end servers
+  hosts: all
+  collections:
+    - community.mysql 
+  remote_user: root
+  tasks:
+  - name: Apt-get Update
+    command: apt update
+  - name: Install pip3
+    apt:
+      name: python3-pip
+      state: latest
+  - name: Install MySQL Server
+    apt:
+      name: mysql-server
+      state: latest
+  - name: Install PyMySql
+    command : python3 -m pip install PyMySQL
+  - name: Add testuser
+    community.mysql.mysql_user:
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      name: testuser
+      password: 1qaz2wsx
+      priv: '*.*:ALL'
+      state: present
+  - name: Add testdb
+    community.mysql.mysql_db:
+      login_unix_socket: /var/run/mysqld/mysqld.sock
+      name: testdb
+      encoding: utf8
+      collation: utf8_general_ci
+  - name: Install npm
+    apt:
+      name: npm
+      state: latest
+  - name : npm install PM2
+    command : npm install pm2@latest -g
+  - name: Copy Source Files to Server
+    ansible.builtin.copy:
+      src: /home/parallels/Nodejs_Express_Backend_Ubuntu
+      dest: /root
+      mode: preserve
+      remote_src: no
+  - name: npm install back-end node_module
+    command: npm install
+    args:
+      chdir: /root/Nodejs_Express_Backend_Ubuntu
+  - name: start back-end server
+    command: pm2 start server.js
+    args:
+      chdir: /root/Nodejs_Express_Backend_Ubuntu
+
+
+
